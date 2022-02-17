@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 // This contract is to demonstrate how data in a smart contract is stored.
 contract ApeSchool {
 
-    uint256 public favouriteNumber = 5; // public keyword exposes the variable to the contract.
+    uint256 favouriteNumber = 5; // public keyword exposes the variable to the contract.
     bool favoriteBool = true;
     string favouriteString = "string";
     int256 favoriteInt = -5;
@@ -17,14 +17,14 @@ contract ApeSchool {
         uint256 favouriteNumber;
     }
 
-    Ape public hodler = Ape({name: "Mary", favouriteNumber: 7});
+    // Ape public hodler = Ape({name: "Mary", favouriteNumber: 7});
 
     // dynamic array
     Ape[] public apes;
     mapping(string => uint256) public nameToFavouriteNumber;
 
     // fixed array
-    Ape[1] public oneApe;
+    // Ape[1] public oneApe;
 
     // function
     // memory keyword - data is stored only during execution
@@ -33,12 +33,9 @@ contract ApeSchool {
         apes.push(Ape({name: _name, favouriteNumber: _favouriteNumber}));
         nameToFavouriteNumber[_name] = _favouriteNumber;
     }
-    function store(uint256 _favoriteNumber) public {
-        favouriteNumber = _favoriteNumber;
-    }
 
     // view, pure
-    function getFavouriteNumber(string memory _name) public view returns(uint256) {
+    function getApeFavouriteNumber(string memory _name) public view returns(uint256) {
         return nameToFavouriteNumber[_name];
     }
 
