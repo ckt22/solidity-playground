@@ -20,7 +20,7 @@ contract ApeSchool {
     // Ape public hodler = Ape({name: "Mary", favouriteNumber: 7});
 
     // dynamic array
-    Ape[] public apes;
+    Ape[] apes;
     mapping(string => uint256) public nameToFavouriteNumber;
 
     // fixed array
