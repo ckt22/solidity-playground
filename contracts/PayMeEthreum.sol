@@ -3,9 +3,11 @@
 pragma solidity >= 0.7.0 <= 0.8.7;
 
 // chainlink interface
+// package is installed via npm
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-
+// A crowdsourcing app that accpets funding with a min threshold from users
+// and allow withdrawl only by the contract owner
 contract PayMeEthreum {
 
     // Math overflow problem is handled in solidity v8+
