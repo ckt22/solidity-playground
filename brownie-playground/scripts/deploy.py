@@ -1,4 +1,4 @@
-from brownie import accounts, config, ApeSchool
+from brownie import accounts, config, ApeSchool, network
 import os
 
 # to connect to testnet account, do the following 
@@ -18,11 +18,13 @@ import os
 
 def deploy_ape_school():
 
-    account = accounts[0]
+    account = get_account()
+    print(account)
     ape_school = ApeSchool.deploy({
         "from": account
     })
-    print(ape_school)
+
+    # brownie run scripts/deploy --network rinkeby 
 
     # call a view function
     ape_favourite_number = ape_school.getApeFavouriteNumber("Mary")
@@ -33,6 +35,12 @@ def deploy_ape_school():
     transaction.wait(1)
     ape_favourite_number = ape_school.getApeFavouriteNumber("Mary")
     print(ape_favourite_number)
+
+def get_account():
+    if network.show_active() == "development":
+        return accounts[0]
+    else:
+        return accounts.add(config["wallets"]["from_key"])
 
 def main():
     deploy_ape_school()

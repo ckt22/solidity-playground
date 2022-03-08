@@ -36,7 +36,7 @@ contract ApeSchool {
 
     // view, pure
     function getApeFavouriteNumber(string memory _name) public view returns(uint256) {
-        return nameToFavouriteNumber[_name];
+        return (nameToFavouriteNumber[_name] == 0) ? 1 : nameToFavouriteNumber[_name];
     }
 
 } 
