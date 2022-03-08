@@ -29,8 +29,8 @@ def deploy_ape_school():
     print(ape_favourite_number)
 
     # transaction
-    transaaction = ape_school.addApe("Mary", 7)
-    transaaction.wait(1)
+    transaction = ape_school.addApe("Mary", 7)
+    transaction.wait(1)
     ape_favourite_number = ape_school.getApeFavouriteNumber("Mary")
     print(ape_favourite_number)
 
