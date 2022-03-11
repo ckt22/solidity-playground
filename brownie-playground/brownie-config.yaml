@@ -1,6 +1,18 @@
 dotenv: .env
 networks:
   rinkeby:
+    eth_use_price_feed: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e'
     verify: True
+  development:
+    verify: False
+  ganache-local:
+    verify: False
 wallets:
   from_key: ${PRIVATE_KEY}
+compiler:
+  solc:
+    version: 0.8.7
+    remappings:
+      - '@chainlink=smartcontractkit/chainlink-brownie-contracts@0.4.0'
+dependencies:
+  - smartcontractkit/chainlink-brownie-contracts@0.4.0

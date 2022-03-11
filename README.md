@@ -12,3 +12,9 @@ This contract demonstrates how a contract can deploy other contracts as at the s
 
 ## Pay Me Ethereum (Payment)
 This contract demonstrates how to accept payment from users and allow ethereum withdrawl of the contract owner.
+
+## Brownie
+To add a network to brownie
+```
+brownie networks add Ethereum ganache-local host=http://127.0.0.1:7545 chainid=5777
+```
