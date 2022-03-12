@@ -28,7 +28,7 @@ contract PayMeEthereum {
     function buyMeACoffee() public payable {
 
         // $50 USD
-        uint256 minPrice = 50 * 10 * 18; // 50 USD
+        uint256 minPrice = 50 * 10 ** 18; // 50 USD
         require(getConversationRate(minPrice) >= minPrice, "You need to spend more ETH!"); // if the condition returns false, revert transaction
         addressToAmountPaidMap[msg.sender] += msg.value;
         funders.push(msg.sender);
@@ -52,6 +52,13 @@ contract PayMeEthereum {
         uint256 ethPrice = getPrice();
         uint256 ethAmountInUsd = (ethPrice*ethAmount) / 1000000000000000000;
         return ethAmountInUsd;
+    }
+
+    function getEntranceFee() public view returns(uint256) {
+        uint256 minimumUSD = 50 * 10 ** 18;
+        uint256 price = getPrice();
+        uint256 percision = 1 * 10 ** 18;
+        return (minimumUSD * percision) / price;
     }
 
     // change the behavior of a function in a declarative way
