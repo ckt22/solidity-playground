@@ -18,7 +18,8 @@ def test_add_ape():
     })
 
     expected = 7
-    transaction = ape_school.addApe("Mary", 7)
+    # have to add from account
+    transaction = ape_school.addApe("Mary", 7, {"from": account})
     transaction.wait(1)
 
     assert ape_school.getApeFavouriteNumber("Mary") == expected

@@ -21,6 +21,7 @@ def deploy():
         { "from": account },
         publish_source=config["networks"][network.show_active()].get("verify"))
     print(pay_me)
+    return pay_me
 
 def main():
     deploy()
