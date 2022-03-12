@@ -18,3 +18,13 @@ To add a network to brownie
 ```
 brownie networks add Ethereum ganache-local host=http://127.0.0.1:7545 chainid=5777
 ```
+
+To add a mainnet fork to brownie (with the help of infura)
+```
+brownie networks add development mainnet-fork-dev cmd=ganache-cli host=http://127.0.0.1 fork=https://eth-mainnet.alchemyapi.io/v2/JXpMtAZnjtcDSZg4L0AAtv1LuvwsDRQO accounts=10 mnemonic=brownie port=8545
+```
+
+Testing a selected function
+```
+brownie test -k test_function_name --network blah
+```
