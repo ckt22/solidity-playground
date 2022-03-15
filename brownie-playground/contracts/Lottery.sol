@@ -1,92 +1,137 @@
 // SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
 
-pragma solidity ^0.8.0;
+import "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 
-// the ownable abstract contract provides the onlyOwner modifier
-// that sets the access right to owner only
-contract Lottery is Ownable, VRFConsumerBase {
+
+contract Lottery is VRFConsumerBaseV2, Ownable {
+
+    VRFCoordinatorV2Interface COORDINATOR;
+    LinkTokenInterface LINKTOKEN;
+    // Your subscription ID.
+    uint64 s_subscriptionId;
 
     address payable[] public players;
     address payable public recentWinner;
     uint256 public randomness;
     uint256 public usdEntryFee;
-    AggregatorV3Interface internal ethUsdPriceFeed;
-    enum LOTTERY_STATE { OPEN, CLOSED, CALCULATING_WINNER }
-    LOTTERY_STATE public lotteryState;
+    address internal vrfCoordinator;
 
-    // variables from VRFConsumerBase
+    uint32 numWords = 2;
+    uint16 requestConfirmations = 3;
+    uint32 callbackGasLimit = 300000;
+    uint256 public s_requestId;
+
+    AggregatorV3Interface internal ethUsdPriceFeed;
+    enum LOTTERY_STATE {
+        OPEN,
+        CLOSED,
+        CALCULATING_WINNER
+    }
+    LOTTERY_STATE public lottery_state;
     uint256 public fee;
     bytes32 public keyhash;
     event RequestedRandomness(bytes32 requestId);
+
+    // 0
+    // 1
+    // 2
 
     constructor(
         address _priceFeedAddress,
         address _vrfCoordinator,
         address _link,
         uint256 _fee,
-        bytes32 _keyhash
-    ) VRFConsumerBase(_vrfCoordinator, _link) {
+        bytes32 _keyhash,
+        uint64 subscriptionId
+    ) VRFConsumerBaseV2(_vrfCoordinator) {
         usdEntryFee = 50 * (10**18);
         ethUsdPriceFeed = AggregatorV3Interface(_priceFeedAddress);
-        lotteryState = LOTTERY_STATE.CLOSED;
+        lottery_state = LOTTERY_STATE.CLOSED;
         fee = _fee;
         keyhash = _keyhash;
+        COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
+        
+        LINKTOKEN = LinkTokenInterface(_link);
+        s_subscriptionId = subscriptionId;
+
+        LINKTOKEN.transferAndCall(address(COORDINATOR), 2000000000000000000, abi.encode(s_subscriptionId));
+        address[] memory consumers = new address[](1);
+        consumers[0] = address(this);
+        COORDINATOR.addConsumer(1484, consumers[0]);
     }
 
     function enter() public payable {
-        require(lotteryState == LOTTERY_STATE.OPEN);
-        require(msg.value > getEntranceFee(), "Not enough fee to enter!");
+        // $50 minimum
+        require(lottery_state == LOTTERY_STATE.OPEN);
+        require(msg.value >= getEntranceFee(), "Not enough ETH!");
         players.push(payable(msg.sender));
     }
 
-    function getEntranceFee() public view returns(uint256) {
-        (,int256 price,,,) = ethUsdPriceFeed.latestRoundData();
-        uint256 adjustedPrice = uint256(price) * 10 ** 10; // convert to gwei (18 decimals)
-        return (usdEntryFee * 10**18) / adjustedPrice;
+    function getEntranceFee() public view returns (uint256) {
+        (, int256 price, , , ) = ethUsdPriceFeed.latestRoundData();
+        uint256 adjustedPrice = uint256(price) * 10**10; // 18 decimals
+        // $50, $2,000 / ETH
+        // 50/2,000
+        // 50 * 100000 / 2000
+        uint256 costToEnter = (usdEntryFee * 10**18) / adjustedPrice;
+        return costToEnter;
     }
 
-    // only the owner can start the lottery
+    // Assumes the subscription is funded sufficiently.
+    function requestRandomWords() internal onlyOwner {
+        // Will revert if subscription is not set and funded.
+        s_requestId = COORDINATOR.requestRandomWords(
+            keyhash,
+            s_subscriptionId,
+            requestConfirmations,
+            callbackGasLimit,
+            numWords
+        );
+    }
+
     function startLottery() public onlyOwner {
-        require(lotteryState == LOTTERY_STATE.CLOSED, "Can't start the lottery yet!");
-        lotteryState = LOTTERY_STATE.OPEN;
+        require(
+            lottery_state == LOTTERY_STATE.CLOSED,
+            "Can't start a new lottery yet!"
+        );
+        lottery_state = LOTTERY_STATE.OPEN;
     }
 
-    // only the owner can close the lottery
     function endLottery() public onlyOwner {
-
-        // insecure practice
         // uint256(
-        //     keccak256(
+        //     keccack256(
         //         abi.encodePacked(
-        //             nonce, // predictable
-        //             msg.sender, // predictable
-        //             block.difficulty, // can be manipulated
-        //             block.timestamp // predictable
+        //             nonce, // nonce is preditable (aka, transaction number)
+        //             msg.sender, // msg.sender is predictable
+        //             block.difficulty, // can actually be manipulated by the miners!
+        //             block.timestamp // timestamp is predictable
         //         )
         //     )
         // ) % players.length;
-
-        lotteryState = LOTTERY_STATE.CALCULATING_WINNER;
-        bytes32 requestId = requestRandomness(keyhash, fee);
-        emit RequestedRandomness(requestId);
+        lottery_state = LOTTERY_STATE.CALCULATING_WINNER;
+        requestRandomWords();
     }
 
-    // callback of the VRF contract
-    function fulfillRandomness(bytes32 requestId, uint256 _randomness) internal override {
-        require(lotteryState == LOTTERY_STATE.CALCULATING_WINNER, "Incorrect lottery state.");
-        require(randomness > 0, "random-not-found");
-
-        uint256 indexOfWinner = _randomness % players.length;
+    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords)
+        internal
+        override
+    {
+        require(
+            lottery_state == LOTTERY_STATE.CALCULATING_WINNER,
+            "You aren't there yet!"
+        );
+        require(randomWords[0] > 0, "random-not-found");
+        uint256 indexOfWinner = randomWords[0] % players.length;
         recentWinner = players[indexOfWinner];
         recentWinner.transfer(address(this).balance);
-
-        // reset
+        // Reset
         players = new address payable[](0);
-        lotteryState = LOTTERY_STATE.CLOSED;
-        randomness = _randomness;
+        lottery_state = LOTTERY_STATE.CLOSED;
+        randomness = randomWords[0];
     }
-
 }

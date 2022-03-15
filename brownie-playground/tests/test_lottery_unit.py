@@ -45,7 +45,7 @@ def test_can_end_lottery():
     lottery.enter({"from":account, "value":lottery.getEntranceFee()+100})
     fund_with_link(lottery)
     lottery.endLottery({"from":account})
-    assert lottery.lotteryState() == 2
+    assert lottery.lottery_state() == 2
 
 def test_can_pick_winner_correctly():
     if (network.show_active() not in LOCAL_BLOCKCHAIN_ENVIRONMENTS):

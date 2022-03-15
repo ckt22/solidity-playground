@@ -1,5 +1,5 @@
-from scripts.helper import get_account_v2, get_contract, fund_with_link
-from brownie import Lottery, network, config
+from scripts.helper import get_account, get_account_v2, get_contract, fund_with_link
+from brownie import Lottery, LotteryClean, network, config
 import time
 
 
@@ -11,8 +11,9 @@ def deploy_lottery():
         get_contract("link_token").address,
         config["networks"][network.show_active()]["fee"],
         config["networks"][network.show_active()]["keyhash"],
-        {"from": account},
-        publish_source=config["networks"][network.show_active()].get("verify", False)
+        config["networks"][network.show_active()]["subscription_id"],
+        {"from": account, "gas_limit": 20000000},
+        publish_source=config["networks"][network.show_active()].get("verify", False),
     )
     print("Deployed lottery")
     print(lottery.getEntranceFee())
@@ -33,17 +34,24 @@ def enter_lottery():
 
 def end_lottery():
     account = get_account_v2()
+    print(f"Account is {account}")
     lottery = Lottery[-1]
     # fund the contract
-    tx = fund_with_link(lottery.address)
-    tx.wait(1)
-    ending_transaction = lottery.endLottery({"from": account})
+    # tx = fund_with_link(lottery.address)
+    # tx.wait(1)
+
+    # ending_transaction = lottery.endLottery({"from": account})
+    # ending_transaction.wait(1)
+    # time.sleep(60)
+    # print(f"{lottery.recentWinner()} is the new winner!")
+
+    ending_transaction = lottery.pickWinner({"from": account})
     ending_transaction.wait(1)
-    time.sleep(60)
-    print(f"{lottery.recentWinner()} is the new winner!")
+    print(f"{lottery.getWinnerByLottery(0)}")
 
 
 def main():
     deploy_lottery()
-    start_lottery()
+    # start_lottery()
     enter_lottery()
+    end_lottery()

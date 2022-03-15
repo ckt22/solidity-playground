@@ -30,6 +30,8 @@ def get_account_v2(index=None, id=None):
     if (network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS 
     or network.show_active() in FORKED_LOCAL_ENVIRONMENTS):
         return accounts[0]
+    else:
+        return accounts.add(config["wallets"]["from_key"])
 
 contract_to_mock = {
     "eth_usd_price_feed": MockV3Aggregator,
@@ -38,23 +40,28 @@ contract_to_mock = {
 }
 
 def get_contract(contract_name):
-    """Grab the contract address from brownie config if defined
-    otherwise, it will deploy a mock version of the contract
-
+    """This function will grab the contract addresses from the brownie config
+    if defined, otherwise, it will deploy a mock version of that contract, and
+    return that mock contract.
         Args:
             contract_name (string)
-        
         Returns:
-            brownie.network.contract.ProjectContract: The most recently deployed version of this contract
+            brownie.network.contract.ProjectContract: The most recently deployed
+            version of this contract.
     """
     contract_type = contract_to_mock[contract_name]
-    if (network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS):
+    if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
         if len(contract_type) <= 0:
+            # MockV3Aggregator.length
             deploy_mocks()
         contract = contract_type[-1]
-    else: # case for testnets
+        # MockV3Aggregator[-1]
+    else:
         contract_address = config["networks"][network.show_active()][contract_name]
+        # address
+        # ABI
         contract = Contract.from_abi(contract_type._name, contract_address, contract_type.abi)
+        # MockV3Aggregator.abi
     return contract
 
 def deploy_mocks(decimals=DECIMALS, initial_value=STARTING_VALUE):
@@ -66,13 +73,14 @@ def deploy_mocks(decimals=DECIMALS, initial_value=STARTING_VALUE):
     link_token = LinkToken.deploy({"from":account})
     VRFCoordinatorMock.deploy(link_token.address, {"from":account})
 
-def fund_with_link(contract_address, account=None, link_token=None, amount=100000000000000000):
+def fund_with_link(
+    contract_address, account=None, link_token=None, amount=2000000000000000000
+):  # 2 LINK
     account = account if account else get_account()
     link_token = link_token if link_token else get_contract("link_token")
-
-    tx = link_token.transfer(contract_address,amount,{"from":account})
-    tx.wait(1)
+    tx = link_token.transfer(contract_address, amount, {"from": account})
     # link_token_contract = interface.LinkTokenInterface(link_token.address)
-    # tx = link_token_contract.transfer(contract_address,amount,{"from":account})
-    # tx.wait(1)
+    # tx = link_token_contract.transfer(contract_address, amount, {"from": account})
+    tx.wait(1)
+    print("Fund contract!")
     return tx
