@@ -7,7 +7,7 @@ def deploy_lottery():
     account = get_account_v2()
     lottery = LotteryClean.deploy(
         {"from":account},
-        publish_source=config["networks"][network.show_active()].get("verify", False)
+        publish_source=config["networks"][network.show_active()].get("verify")
     )
     print("Deployed lottery")
     return lottery
@@ -17,7 +17,7 @@ def enter_lottery():
     lottery = LotteryClean[-1]
     value = 100000000000000000
     tx = lottery.enter({"from": account, "value": value})
-    tx.wait(1)
+    tx.wait(3)
 
 def end_lottery():
     account = get_account_v2()
@@ -25,10 +25,10 @@ def end_lottery():
     lottery = LotteryClean[-1]
     # fund the contract
     tx = fund_with_link(lottery.address)
-    tx.wait(1)
+    tx.wait(3)
 
     ending_transaction = lottery.pickWinner({"from": account})
-    ending_transaction.wait(1)
+    ending_transaction.wait(3)
     time.sleep(60)
     print(f"{lottery.getWinnerByLottery(0)}")
 
