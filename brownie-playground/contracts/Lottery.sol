@@ -20,6 +20,7 @@ contract Lottery is Ownable, VRFConsumerBase {
     // variables from VRFConsumerBase
     uint256 public fee;
     bytes32 public keyhash;
+    event RequestedRandomness(bytes32 requestId);
 
     constructor(
         address _priceFeedAddress,
@@ -70,8 +71,9 @@ contract Lottery is Ownable, VRFConsumerBase {
 
         lotteryState = LOTTERY_STATE.CALCULATING_WINNER;
         bytes32 requestId = requestRandomness(keyhash, fee);
+        emit RequestedRandomness(requestId);
     }
-    
+
     // callback of the VRF contract
     function fulfillRandomness(bytes32 requestId, uint256 _randomness) internal override {
         require(lotteryState == LOTTERY_STATE.CALCULATING_WINNER, "Incorrect lottery state.");
